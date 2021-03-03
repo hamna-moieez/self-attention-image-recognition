@@ -4,32 +4,34 @@ from san import SAN
 import config
 import utils
 import math
+from tqdm import tqdm
 
 (train_img, train_lab),(test_img, test_lab) = utils.data_loader("CIFAR10")
-train_count = len(train_img)
-train_img = utils.data_preprocess(train_img)
-# train_lab = utils.one_hot_encoder(train_lab)
 
+train_img = utils.data_preprocess(train_img)
+train_lab = utils.one_hot_encoder(train_lab)
 X_train, X_val, y_train, y_val = utils.validation_data(train_img, train_lab)
 train_generator, val_generator = utils.data_augmentation(X_train, y_train, X_val, y_val)
+
 model = SAN()
 model.build(input_shape=(None, config.image_height, config.image_width, config.channels))
 model.summary()
 
 # define loss and optimizer
-loss_object = tf.keras.losses.SparseCategoricalCrossentropy()
-optimizer = tf.keras.optimizers.Adadelta()
+loss_object = tf.keras.losses.CategoricalCrossentropy()
+optimizer = tf.keras.optimizers.Adam()
 
 train_loss = tf.keras.metrics.Mean(name='train_loss')
-train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
+train_accuracy = tf.keras.metrics.CategoricalAccuracy(name='train_accuracy')
 
 valid_loss = tf.keras.metrics.Mean(name='valid_loss')
-valid_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='valid_accuracy')
+valid_accuracy = tf.keras.metrics.CategoricalAccuracy(name='valid_accuracy')
 
 @tf.function
 def train_step(images, labels):
     with tf.GradientTape() as tape:
         predictions = model(images, training=True)
+        predictions = tf.reshape(predictions, (-1,10))
         loss = loss_object(y_true=labels, y_pred=predictions)
     gradients = tape.gradient(loss, model.trainable_variables)
     optimizer.apply_gradients(grads_and_vars=zip(gradients, model.trainable_variables))
@@ -40,6 +42,7 @@ def train_step(images, labels):
 @tf.function
 def valid_step(images, labels):
     predictions = model(images, training=False)
+    predictions = tf.reshape(predictions, (-1,10))
     v_loss = loss_object(labels, predictions)
 
     valid_loss(v_loss)
@@ -51,20 +54,21 @@ for epoch in range(config.EPOCHS):
     train_accuracy.reset_states()
     valid_loss.reset_states()
     valid_accuracy.reset_states()
-    step = 0
-    for images, labels in train_generator:
-        step += 1
+   
+    for step in tqdm(range(len(train_generator))):
+        images, labels = train_generator[step]
         train_step(images, labels)
-        print("Epoch: {}/{}, step: {}/{}, loss: {:.5f}, accuracy: {:.5f}".format(epoch + 1,
-                                                                                    config.EPOCHS,
-                                                                                    step,
-                                                                                    math.ceil(train_count / config.BATCH_SIZE),
-                                                                                    train_loss.result(),
-                                                                                    train_accuracy.result()))
 
-    for valid_images, valid_labels in val_generator:
+    print("Epoch: {}/{}, loss: {:.5f}, accuracy: {:.5f}".format(epoch + 1,
+                                                                config.EPOCHS,
+                                                                train_loss.result(),
+                                                                train_accuracy.result()))
+
+    for val_step in range(len(val_generator)):
+        valid_images, valid_labels = val_generator[val_step]
         valid_step(valid_images, valid_labels)
-
+    
+    print("<"+"-"*80+">")
     print("Epoch: {}/{}, train loss: {:.5f}, train accuracy: {:.5f}, "
             "valid loss: {:.5f}, valid accuracy: {:.5f}".format(epoch + 1,
                                                                 config.EPOCHS,
@@ -72,5 +76,6 @@ for epoch in range(config.EPOCHS):
                                                                 train_accuracy.result(),
                                                                 valid_loss.result(),
                                                                 valid_accuracy.result()))
+    print("<"+"-"*80+">")
 
 model.save_weights(filepath=config.save_model_dir, save_format='tf')

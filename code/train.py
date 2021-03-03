@@ -1,22 +1,27 @@
-import tensorflow
+import tensorflow as tf
 import utils
 import model
 from model import MyModel
-epochs = 10
+
+epochs = 150
 batch_size = 64
 
 
 def compile_network(model):
     model.compile(optimizer='adam',
-        loss=tensorflow.keras.losses.CategoricalCrossentropy(from_logits=True),
+        loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
         metrics=['accuracy'])
     return model.summary()
 
-def train(train_dg, val_dg, model):
-    history = model.fit(
+
+def train(train_dg, val_dg, net):
+    lrdecay = tf.keras.callbacks.LearningRateScheduler(model.lrdecay) # learning rate decay  
+    early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=10)
+    history = net.fit(
         train_dg,
         validation_data=val_dg,
-        epochs=epochs
+        epochs=epochs,
+        callbacks=[lrdecay, early_stop]
         )
     train_acc = history.history['accuracy']
     val_acc = history.history['val_accuracy']
@@ -43,20 +48,17 @@ def plot(acc, val_acc, loss, val_loss):
     plt.show()
     
 (train_img, train_lab),(test_img, test_lab) = utils.data_loader("CIFAR10")
-# print(train_img.shape)
 train_img = utils.data_preprocess(train_img)
-test_img = utils.data_preprocess(test_img)
-
 train_lab = utils.one_hot_encoder(train_lab)
-test_lab = utils.one_hot_encoder(test_lab)
 
 X_train, X_val, y_train, y_val = utils.validation_data(train_img, train_lab)
-
 train_generator, val_generator = utils.data_augmentation(X_train, y_train, X_val, y_val)
 
 resnet50_model = MyModel()
 resnet50_model = resnet50_model.resnet50(X_train)
 summary = compile_network(resnet50_model)
-# print(summary)
+
 train_acc, train_loss, val_acc, val_loss = train(train_generator, val_generator, resnet50_model)
 print(train_acc, train_loss, val_acc, val_loss)
+
+model.save_model(resnet50_model, "../models/ResNet50.h5")
