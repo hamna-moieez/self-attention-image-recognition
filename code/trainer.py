@@ -13,7 +13,7 @@ train_lab = utils.one_hot_encoder(train_lab)
 X_train, X_val, y_train, y_val = utils.validation_data(train_img, train_lab)
 train_generator, val_generator = utils.data_augmentation(X_train, y_train, X_val, y_val)
 
-model = SAN()
+model = san.san(sa_type=1, layers=(3, 4, 6, 8, 3), kernels=[3, 7, 7, 7, 7])
 model.build(input_shape=(None, config.image_height, config.image_width, config.channels))
 model.summary()
 
@@ -55,11 +55,11 @@ for epoch in range(config.EPOCHS):
     valid_loss.reset_states()
     valid_accuracy.reset_states()
    
-    for step in tqdm(range(len(train_generator))):
+    for step in range(len(train_generator)):
         images, labels = train_generator[step]
         train_step(images, labels)
 
-    print("Epoch: {}/{}, loss: {:.5f}, accuracy: {:.5f}".format(epoch + 1,
+        print("Epoch: {}/{}, loss: {:.5f}, accuracy: {:.5f}".format(epoch + 1,
                                                                 config.EPOCHS,
                                                                 train_loss.result(),
                                                                 train_accuracy.result()))
