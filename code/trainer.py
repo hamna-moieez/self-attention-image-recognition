@@ -57,7 +57,8 @@ for epoch in range(config.EPOCHS):
    
     for step in range(len(train_generator)):
         images, labels = train_generator[step]
-        images = images.transpose(0, 3, 1, 2)
+        images = tf.image.resize(images, [224, 224])
+        images = tf.transpose(images, [0, 3, 1, 2])
         train_step(images, labels)
 
         print("Epoch: {}/{}, loss: {:.5f}, accuracy: {:.5f}".format(epoch + 1,
