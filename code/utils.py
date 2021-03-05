@@ -8,10 +8,11 @@ def data_loader(dataset):
         (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
     elif dataset.startswith('CIFAR10'):
         (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
-    
+
+
     return (x_train, y_train), (x_test, y_test)
 
-# (train_img, train_lab),(test_img, test_lab) = data_loader("MNIST")
+# (train_img, train_lab),(test_img, test_lab) = data_loader("CIFAR10")
 # print(train_img.shape)
 
 def one_hot_encoder(labels):

@@ -14,7 +14,7 @@ X_train, X_val, y_train, y_val = utils.validation_data(train_img, train_lab)
 train_generator, val_generator = utils.data_augmentation(X_train, y_train, X_val, y_val)
 
 model = san.san(sa_type=1, layers=(3, 4, 6, 8, 3), kernels=[3, 7, 7, 7, 7])
-model.build(input_shape=(None, config.image_height, config.image_width, config.channels))
+model.build(input_shape=(None, config.channels, config.image_height, config.image_width))
 model.summary()
 
 # define loss and optimizer
@@ -57,6 +57,7 @@ for epoch in range(config.EPOCHS):
    
     for step in range(len(train_generator)):
         images, labels = train_generator[step]
+        images = images.transpose(0, 3, 1, 2)
         train_step(images, labels)
 
         print("Epoch: {}/{}, loss: {:.5f}, accuracy: {:.5f}".format(epoch + 1,
@@ -66,6 +67,7 @@ for epoch in range(config.EPOCHS):
 
     for val_step in range(len(val_generator)):
         valid_images, valid_labels = val_generator[val_step]
+        valid_images = valid_images.transpose(0, 3, 1, 2)
         valid_step(valid_images, valid_labels)
     
     print("<"+"-"*80+">")
