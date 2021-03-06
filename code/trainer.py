@@ -5,7 +5,9 @@ import config
 import utils
 import math
 from tqdm import tqdm
+import os
 
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 (train_img, train_lab),(test_img, test_lab) = utils.data_loader("CIFAR10")
 
 train_img = utils.data_preprocess(train_img)
@@ -14,7 +16,7 @@ X_train, X_val, y_train, y_val = utils.validation_data(train_img, train_lab)
 train_generator, val_generator = utils.data_augmentation(X_train, y_train, X_val, y_val)
 
 model = san.san(sa_type=1, layers=(3, 4, 6, 8, 3), kernels=[3, 7, 7, 7, 7])
-model.build(input_shape=(None, config.channels, config.image_height, config.image_width))
+model.build(input_shape=(config.BATCH_SIZE, config.channels, config.image_height, config.image_width))
 model.summary()
 
 # define loss and optimizer
@@ -61,13 +63,14 @@ for epoch in range(config.EPOCHS):
         images = tf.transpose(images, [0, 3, 1, 2])
         train_step(images, labels)
 
-        print("Epoch: {}/{}, loss: {:.5f}, accuracy: {:.5f}".format(epoch + 1,
+    print("Epoch: {}/{}, loss: {:.5f}, accuracy: {:.5f}".format(epoch + 1,
                                                                 config.EPOCHS,
                                                                 train_loss.result(),
                                                                 train_accuracy.result()))
 
     for val_step in range(len(val_generator)):
         valid_images, valid_labels = val_generator[val_step]
+        valid_images = tf.image.resize(valid_images, [224, 224])
         valid_images = valid_images.transpose(0, 3, 1, 2)
         valid_step(valid_images, valid_labels)
     

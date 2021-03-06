@@ -130,29 +130,26 @@ class MyModel:
 
         return model
 
-    #     ### Define some Callbacks
-    # def lrdecay(epoch):
-    #     lr = 1e-3
-    #     if epoch > 180:
-    #         lr *= 0.5e-3
-    #     elif epoch > 160:
-    #         lr *= 1e-3
-    #     elif epoch > 120:
-    #         lr *= 1e-2
-    #     elif epoch > 80:
-    #         lr *= 1e-1
-    #     #print('Learning rate: ', lr)
-    #     return lr
-    # # if epoch < 40:
-    # #   return 0.01
-    # # else:
-    # #   return 0.01 * np.math.exp(0.03 * (40 - epoch))
-    # lrdecay = tf.keras.callbacks.LearningRateScheduler(lrdecay) # learning rate decay  
+### Define some Callbacks
+def lrdecay(epoch):
+    lr = 1e-3
+    if epoch > 150:
+        lr *= 0.5e-3
+    elif epoch > 100:
+        lr *= 1e-3
+    elif epoch > 80:
+        lr *= 1e-2
+    elif epoch > 30:
+        lr *= 1e-1
+    #print('Learning rate: ', lr)
+    return lr
 
+# def earlystop(mode):
+#     if mode=='accuracy':
+#         estop = tf.keras.callbacks.EarlyStopping(monitor='val_acc', patience=15, mode='max')
+#     elif mode=='loss':
+#         estop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=15, mode='min')
+#     return estop
 
-    # def earlystop(mode):
-    # if mode=='acc':
-    #     estop = tf.keras.callbacks.EarlyStopping(monitor='val_acc', patience=15, mode='max')
-    # elif mode=='loss':
-    #     estop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=15, mode='min')
-    # return estop
+def save_model(net, path):
+    tf.keras.models.save_model(net, path)

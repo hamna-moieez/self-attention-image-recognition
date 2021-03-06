@@ -1,7 +1,6 @@
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-
-batch_size = 64
+import config
 def data_loader(dataset):
     
     if dataset.startswith('MNIST'):
@@ -46,6 +45,6 @@ def data_augmentation(train_im, train_lab, valid_im, valid_lab):
  
     valid_datagen = tf.keras.preprocessing.image.ImageDataGenerator()
 
-    train_set_conv = train_DataGen.flow(train_im, train_lab, batch_size=batch_size) # train_lab is categorical 
-    valid_set_conv = valid_datagen.flow(valid_im, valid_lab, batch_size=batch_size) # so as valid_lab
+    train_set_conv = train_DataGen.flow(train_im, train_lab, batch_size=config.BATCH_SIZE) # train_lab is categorical 
+    valid_set_conv = valid_datagen.flow(valid_im, valid_lab, batch_size=config.BATCH_SIZE) # so as valid_lab
     return train_set_conv, valid_set_conv
