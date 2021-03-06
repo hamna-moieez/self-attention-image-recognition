@@ -1,28 +1,18 @@
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 import config
+
 def data_loader(dataset):
-    
     if dataset.startswith('MNIST'):
         (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
     elif dataset.startswith('CIFAR10'):
         (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
-
-
     return (x_train, y_train), (x_test, y_test)
 
-# (train_img, train_lab),(test_img, test_lab) = data_loader("CIFAR10")
-# print(train_img.shape)
-
 def one_hot_encoder(labels):
-
-    ### One hot encoding for labels 
-
     lab_categorical = tf.keras.utils.to_categorical(
         labels, num_classes=10, dtype='uint8')
-
     return lab_categorical
-
 
 def data_preprocess(images):
     return images/255.0
@@ -33,18 +23,12 @@ def validation_data(X, y):
     
     return X_train, X_val, y_train, y_val
 
-# X_train, X_val, y_train, y_val = validation_data(train_img, train_lab)
-
-# print(X_train.shape)
-
 def data_augmentation(train_im, train_lab, valid_im, valid_lab):
     train_DataGen = tf.keras.preprocessing.image.ImageDataGenerator(zoom_range=0.2, 
                                                                 width_shift_range=0.1, 
                                                                 height_shift_range = 0.1, 
                                                                 horizontal_flip=True)
- 
     valid_datagen = tf.keras.preprocessing.image.ImageDataGenerator()
-
     train_set_conv = train_DataGen.flow(train_im, train_lab, batch_size=config.BATCH_SIZE) # train_lab is categorical 
     valid_set_conv = valid_datagen.flow(valid_im, valid_lab, batch_size=config.BATCH_SIZE) # so as valid_lab
     return train_set_conv, valid_set_conv

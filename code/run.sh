@@ -13,7 +13,5 @@
 
 module load slurm cuda10.1/toolkit
 
-#export CUDA_VISIBLE_DEVICES=1
-
 python -u trainer.py
 

@@ -8,15 +8,11 @@ def aggregation(input_, weight, kernel_size, stride, padding, dilation, pad_mode
     dilation_unfold = [1, dilation, dilation, 1]
     n, c_x, c_w, in_height, in_width = tf.shape(input_)[0], input_.shape[1], weight.shape[1], input_.shape[2], input_.shape[3]
 
-    # print("n, c_x, c_w, in_height, in_width",n, c_x, c_w, in_height, in_width)
     out_height = int((in_height + 2 * padding - (dilation * (kernel_size - 1) + 1)) / stride + 1)
     out_width = int((in_width + 2 * padding - (dilation * (kernel_size - 1) + 1)) / stride + 1)
-    # print("out_height, out_width ", out_height, out_width)
     unfold_j = tf.image.extract_patches(input_, kernel_size_unfold, strides_unfold, dilation_unfold, "SAME")
 
     out = tf.reshape(unfold_j, [n, c_x // c_w, c_w, pow(kernel_size, 2), out_height * out_width])
-    # print("out ", out.shape)
-    # print("weight ", weight.shape)
 
     hadamard = tf.math.reduce_sum(tf.expand_dims(weight, 1) * out, -2)
     hadamard = tf.reshape(hadamard, [n, c_x, out_height, out_width])

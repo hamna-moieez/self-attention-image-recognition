@@ -7,6 +7,10 @@ from functions import Aggregation
 '''
 tensorflow 4-D tensor -> (batchsize, width, height, channels) 
 torch 4-D tensor -> (batchsize, channels, height, width) 
+
+MY RUNNING CONFIGURATION:
+Tensorflow --> data format = channels first (batchsize, channels, height, width)
+
 '''
 
 def conv_1x1(out_dim, stride=1):
@@ -59,12 +63,6 @@ class SelfAttention(tf.keras.Model):
             # self.subtraction = Subtraction2(kernel_size, strides, (dilation * (kernel_size-1)+1)//2, dilation, pad_mode=1)
             self.softmax = tf.keras.layers.Softmax(axis=-2)
         else:
-            # self.conv_w = tf.keras.Sequential([tf.keras.layers.BatchNormalization(),
-            #                                 tf.keras.layers.ReLU(),
-            #                                 conv_1x1(out_planes//share_planes),
-            #                                 tf.keras.layers.BatchNormalization(),
-            #                                 conv_1x1(pow(kernel_size, 2)*out_planes//share_planes)])
-
             self.bn_w1 = tf.keras.layers.BatchNormalization()
             self.relu_w1 = tf.keras.layers.ReLU()
             self.conv_w1 = conv_1x1(out_planes//share_planes)
@@ -81,10 +79,6 @@ class SelfAttention(tf.keras.Model):
             p = self.conv_p(position(input_.shape[1], input_.shape[2]))
             w = self.softmax(self.conv_w(tf.concat([self.subtraction2[x1, x2], tf.tile(self.subtraction(p), repeat)], 1)))
         else:
-            # kernel_size_unfold_i = [1, 1, 1, 1]
-            # kernel_size_unfold_j = [1, self.kernel_size, self.kernel_size, 1]
-            # strides_unfold = [1, self.strides, self.strides, 1]
-            # dilation_unfold = [1, self.dilation, self.dilation, 1]
             padding = tf.constant([[0, 0], [0, 0], 
                                 [self.kernel_size//2, self.kernel_size//2], 
                                 [self.kernel_size//2, self.kernel_size//2]])
@@ -92,27 +86,19 @@ class SelfAttention(tf.keras.Model):
             if self.strides !=1:
                 x1 = unfold(x1, 1)    
                 # x1 = tf.image.extract_patches(x1, kernel_size_unfold_i, strides_unfold, dilation_unfold, "VALID")
-            # print("x1, inp ", x1.shape, input_.shape)
+           
             x1 = tf.reshape(x1, [tf.shape(input_)[0], -1, 1, input_.shape[2]*input_.shape[3]])
-            # print("x1", x1.shape)
             pad = tf.pad(x2, padding, "REFLECT")
             unfold_j = unfold(pad, kernel_size=self.kernel_size)
             x2 = tf.reshape(unfold_j, [tf.shape(input_)[0], -1, 1, x1.shape[-1]])
 
-            # print("unfold_j, x2 ", unfold_j.shape, x2.shape)   
-            # print("i ", input_.shape)
             out = tf.concat([x1, x2], 1)
-            # print("out ", out.shape)
             out = self.bn_w1(out)
             out = self.conv_w1(self.relu_w1(out))
             out = self.conv_w2(self.relu_w2(self.bn_w2(out)))
-            # print("out ", out.shape)
-            # print("con ", pow(self.kernel_size, 2)*self.out_planes//self.share_planes)
             w = tf.reshape(out, [tf.shape(input_)[0], -1, pow(self.kernel_size, 2), x1.shape[-1]])
-        # print("x3, w ", x3.shape, w.shape)   
         x = self.aggregation(x3, w)
-        # print("x_agg", x.shape)
-        return x #tf.keras.layers.add([x3, w])
+        return x
 
 class Transition(tf.keras.Model):
     def __init__(self, sa_type, in_planes, rel_planes, mid_planes, out_planes, share_planes=8, kernel_size=7, strides=1):
@@ -189,8 +175,3 @@ class SAN(tf.keras.Model):
 def san(sa_type, layers, kernels):
     model = SAN(sa_type, Transition, layers, kernels)
     return model 
-
-# if __name__ == '__main__':
-#     net = net = san(sa_type=0, layers=(3, 4, 6, 8, 3), kernels=[3, 7, 7, 7, 7])
-#     print(net)
-
