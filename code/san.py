@@ -29,10 +29,10 @@ def position(width, height):
     loc = tf.expand_dims(tf.concat([tf.expand_dims(loc_w, 0), tf.expand_dims(loc_h, 0)], 0),0)
     return loc
 
-def unfold(input, kernel_size=1):
-    dim2 = (pow(kernel_size, 2)) * input.shape[1]
-    dim3 = (input.shape[2] - (kernel_size -1)) * (input.shape[3] - (kernel_size -1))
-    out = tf.image.resize(input, [dim2, dim3])
+def unfold(input_, kernel_size, dilation, padding, stride):
+    dim2 = (pow(kernel_size, 2)) * input_.shape[1]
+    dim3 = int(pow((input_.shape[2] + 2 * padding - (dilation * (kernel_size - 1) + 1))/stride + 1, 2))
+    out = tf.image.resize(input_, [dim2, dim3])
     out = out[:,:,:,0]
     return out
 
@@ -79,17 +79,22 @@ class SelfAttention(tf.keras.Model):
             p = self.conv_p(position(input_.shape[1], input_.shape[2]))
             w = self.softmax(self.conv_w(tf.concat([self.subtraction2[x1, x2], tf.tile(self.subtraction(p), repeat)], 1)))
         else:
+            # kernel_size_unfold_i = [1, 1, 1, 1]
+            # kernel_size_unfold_j = [1, self.kernel_size, self.kernel_size, 1]
+            # strides_unfold = [1, self.strides, self.strides, 1]
+            # dilation_unfold = [1, self.dilation, self.dilation, 1]
             padding = tf.constant([[0, 0], [0, 0], 
                                 [self.kernel_size//2, self.kernel_size//2], 
                                 [self.kernel_size//2, self.kernel_size//2]])
 
             if self.strides !=1:
-                x1 = unfold(x1, 1)    
-                # x1 = tf.image.extract_patches(x1, kernel_size_unfold_i, strides_unfold, dilation_unfold, "VALID")
+                x1 = unfold(x1, 1, self.dilation, 0, self.strides) 
+                # x1 = tf.image.extract_patches(x1, kernel_size_unfold_i, strides_unfold, dilation_unfold, "SAME")
            
             x1 = tf.reshape(x1, [tf.shape(input_)[0], -1, 1, input_.shape[2]*input_.shape[3]])
             pad = tf.pad(x2, padding, "REFLECT")
-            unfold_j = unfold(pad, kernel_size=self.kernel_size)
+            # unfold_j = tf.image.extract_patches(pad, kernel_size_unfold_j, strides_unfold, dilation_unfold, "SAME")
+            unfold_j = unfold(pad, self.kernel_size, self.dilation, 0, self.strides) 
             x2 = tf.reshape(unfold_j, [tf.shape(input_)[0], -1, 1, x1.shape[-1]])
 
             out = tf.concat([x1, x2], 1)

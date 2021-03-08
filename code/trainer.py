@@ -8,8 +8,10 @@ from tqdm import tqdm
 import os
 
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
-(train_img, train_lab),(test_img, test_lab) = utils.data_loader("CIFAR10")
 
+# (train_img, train_lab),(test_img, test_lab) = utils.data_loader("CIFAR10")
+
+train_img, train_lab, test_img, test_lab= utils.read_train_test_data("../dataset")
 train_img = utils.data_preprocess(train_img)
 train_lab = utils.one_hot_encoder(train_lab)
 X_train, X_val, y_train, y_val = utils.validation_data(train_img, train_lab)
@@ -59,7 +61,7 @@ for epoch in range(config.EPOCHS):
    
     for step in range(len(train_generator)):
         images, labels = train_generator[step]
-        images = tf.image.resize(images, [224, 224])
+        # images = tf.image.resize(images, [224, 224])
         images = tf.transpose(images, [0, 3, 1, 2])
         train_step(images, labels)
 
@@ -70,7 +72,7 @@ for epoch in range(config.EPOCHS):
 
     for val_step in range(len(val_generator)):
         valid_images, valid_labels = val_generator[val_step]
-        valid_images = tf.image.resize(valid_images, [224, 224])
+        # valid_images = tf.image.resize(valid_images, [224, 224])
         valid_images = valid_images.transpose(0, 3, 1, 2)
         valid_step(valid_images, valid_labels)
     
