@@ -2,7 +2,9 @@ import tensorflow as tf
 from config import NUM_CLASSES
 import math
 import functions
-from functions import Aggregation
+from aggregation import Aggregation
+from subtraction import Subtraction
+from subtraction2 import Subtraction2
 
 '''
 tensorflow 4-D tensor -> (batchsize, width, height, channels) 
@@ -58,9 +60,9 @@ class SelfAttention(tf.keras.Model):
             # self.bn_w2 = tf.keras.layers.BatchNormalization()
             # self.relu_w2 = tf.keras.layers.ReLU()
             # self.conv_w2 = conv_1x1(out_planes//share_planes)
-            self.conv_p = tf.keras.layers.Conv2D(2, kernel_size=(1,1))
-            # self.subtraction = Subtraction(kernel_size, strides, (dilation * (kernel_size-1)+1)//2, dilation, pad_mode=1)
-            # self.subtraction = Subtraction2(kernel_size, strides, (dilation * (kernel_size-1)+1)//2, dilation, pad_mode=1)
+            self.conv_p = conv_1x1(2)
+            self.subtraction = Subtraction(kernel_size, strides, (dilation * (kernel_size-1)+1)//2, dilation, pad_mode=1)
+            self.subtraction2 = Subtraction2(kernel_size, strides, (dilation * (kernel_size-1)+1)//2, dilation, pad_mode=1)
             self.softmax = tf.keras.layers.Softmax(axis=-2)
         else:
             self.bn_w1 = tf.keras.layers.BatchNormalization()
@@ -75,25 +77,19 @@ class SelfAttention(tf.keras.Model):
         x1, x2, x3 = self.conv1(input_), self.conv2(input_), self.conv3(input_)
         if self.sa_type == 0:
             
-            repeat = tf.constant([tf.shape(input_)[0], 1, 1, 1], tf.int32)
-            p = self.conv_p(position(input_.shape[1], input_.shape[2]))
-            w = self.softmax(self.conv_w(tf.concat([self.subtraction2[x1, x2], tf.tile(self.subtraction(p), repeat)], 1)))
+            repeat = tf.constant([input_.shape[0], 1, 1, 1], tf.int32)
+            p = self.conv_p(position(input_.shape[2], input_.shape[3]))
+            w = self.softmax(self.conv_w(tf.concat([self.subtraction2(x1, x2), tf.tile(self.subtraction(p), repeat)], 1)))
         else:
-            # kernel_size_unfold_i = [1, 1, 1, 1]
-            # kernel_size_unfold_j = [1, self.kernel_size, self.kernel_size, 1]
-            # strides_unfold = [1, self.strides, self.strides, 1]
-            # dilation_unfold = [1, self.dilation, self.dilation, 1]
             padding = tf.constant([[0, 0], [0, 0], 
                                 [self.kernel_size//2, self.kernel_size//2], 
                                 [self.kernel_size//2, self.kernel_size//2]])
 
             if self.strides !=1:
                 x1 = unfold(x1, 1, self.dilation, 0, self.strides) 
-                # x1 = tf.image.extract_patches(x1, kernel_size_unfold_i, strides_unfold, dilation_unfold, "SAME")
            
             x1 = tf.reshape(x1, [tf.shape(input_)[0], -1, 1, input_.shape[2]*input_.shape[3]])
             pad = tf.pad(x2, padding, "REFLECT")
-            # unfold_j = tf.image.extract_patches(pad, kernel_size_unfold_j, strides_unfold, dilation_unfold, "SAME")
             unfold_j = unfold(pad, self.kernel_size, self.dilation, 0, self.strides) 
             x2 = tf.reshape(unfold_j, [tf.shape(input_)[0], -1, 1, x1.shape[-1]])
 

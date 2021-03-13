@@ -64,3 +64,11 @@ def read_train_test_data(directory):
     y_val = np.asarray(test_lab)
     
     return x_train, y_train, x_val, y_val
+
+def lrdecay(epoch):
+    lr = 1e-3
+    if epoch > 50: lr *= 0.5e-3
+    elif epoch > 20: lr *= 1e-3
+    elif epoch > 10: lr *= 1e-2
+    elif epoch > 5: lr *= 1e-1
+    return lr
