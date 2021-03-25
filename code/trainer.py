@@ -6,14 +6,18 @@ import utils
 import math
 from tqdm import tqdm
 import os
+# tf.config.experimental_run_functions_eagerly(True)
 
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
-model = san.san(sa_type=0, layers=(3, 4, 6, 8, 3), kernels=[3, 7, 7, 7, 7])
+# (train_img, train_lab),(test_img, test_lab) = utils.data_loader("CIFAR10")
+
+
+model = san.san(sa_type=1, layers=(2, 1, 2, 4, 1), kernels=[3, 7, 7, 7, 7])
 model.build(input_shape=(config.BATCH_SIZE, config.channels, config.image_height, config.image_width))
 model.summary()
 
-train_img, train_lab, test_img, test_lab= utils.read_train_test_data("../dataset")
+train_img, train_lab, test_img, test_lab= utils.read_train_test_data("/home/local/QCRI/mjanjua/self_attention/dataset")
 train_img = utils.data_preprocess(train_img)
 train_lab = utils.one_hot_encoder(train_lab)
 X_train, X_val, y_train, y_val = utils.validation_data(train_img, train_lab)
@@ -21,13 +25,16 @@ train_generator, val_generator = utils.data_augmentation(X_train, y_train, X_val
 
 # define loss and optimizer
 loss_object = tf.keras.losses.CategoricalCrossentropy()
-optimizer = tf.keras.optimizers.Adam()
-
+optimizer = tf.keras.optimizers.Adam(learning_rate=3e-4)
 train_loss = tf.keras.metrics.Mean(name='train_loss')
 train_accuracy = tf.keras.metrics.CategoricalAccuracy(name='train_accuracy')
 
 valid_loss = tf.keras.metrics.Mean(name='valid_loss')
 valid_accuracy = tf.keras.metrics.CategoricalAccuracy(name='valid_accuracy')
+
+# @tf.function
+# def get_optimizer(lr):
+#     return tf.keras.optimizers.Adam(learning_rate=lr)
 
 @tf.function
 def train_step(images, labels):
@@ -35,8 +42,12 @@ def train_step(images, labels):
         predictions = model(images, training=True)
         predictions = tf.reshape(predictions, (-1,10))
         loss = loss_object(y_true=labels, y_pred=predictions)
+        # tf.print("labels -> ", labels)
+        # tf.print("predictions -> ", predictions)
+
     gradients = tape.gradient(loss, model.trainable_variables)
     optimizer.apply_gradients(grads_and_vars=zip(gradients, model.trainable_variables))
+    
 
     train_loss(loss)
     train_accuracy(labels, predictions)
@@ -56,6 +67,7 @@ for epoch in range(config.EPOCHS):
     train_accuracy.reset_states()
     valid_loss.reset_states()
     valid_accuracy.reset_states()
+   
     for step in range(len(train_generator)):
         images, labels = train_generator[step]
         # images = tf.image.resize(images, [224, 224])

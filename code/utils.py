@@ -72,3 +72,11 @@ def lrdecay(epoch):
     elif epoch > 10: lr *= 1e-2
     elif epoch > 5: lr *= 1e-1
     return lr
+
+def smooth_loss(output, target, eps=0.1):
+    w = tf.scatter(tf.expand_dims(target, 1), tf.zeros_like(output))
+    # w = tf.zeros_like(output).scatter(1, target.unsqueeze(1), 1)
+    w = w * (1 - eps) + (1 - w) * eps / (output.shape[1] - 1)
+    log_prob = tf.keras.layers.Softmax(output, axis=1)
+    loss = tf.math.reduce_mean(tf.math.reduce_sum((-w * log_prob), axis=1))
+    return loss

@@ -155,6 +155,7 @@ class SAN(tf.keras.Model):
         self.maxpool = tf.keras.layers.MaxPool2D(pool_size=(2,2), strides=2, data_format="channels_first")
         self.avgpool = tf.keras.layers.GlobalAveragePooling2D(data_format="channels_first")
         self.fc = tf.keras.layers.Dense(NUM_CLASSES)
+        self.softmax = tf.keras.layers.Softmax()
     
     def make_layer(self, sa_type, block, planes, num_blocks, kernel_size=7, strides=1):
         layers = []
@@ -164,13 +165,15 @@ class SAN(tf.keras.Model):
 
     def call(self, input_):
         x = self.relu(self.initial_bn(self.inital_conv(input_)))
+        
         x = self.relu(self.bn0(self.layer0(self.conv0(self.maxpool(x)))))
         x = self.relu(self.bn1(self.layer1(self.conv1(self.maxpool(x)))))
         x = self.relu(self.bn2(self.layer2(self.conv2(self.maxpool(x)))))
         x = self.relu(self.bn3(self.layer3(self.conv3(self.maxpool(x)))))
         x = self.relu(self.bn4(self.layer4(self.conv4(self.maxpool(x)))))
         x = self.avgpool(x)
-        x = self.fc(x)
+        x = self.softmax(self.fc(x))
+
         return x
 
 def san(sa_type, layers, kernels):
