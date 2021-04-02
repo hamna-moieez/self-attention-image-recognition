@@ -5,7 +5,7 @@ A tensorflow implementation of pair-wise and patch-wise self attention network f
 1. Requirements:
 + Python >= 3.6
 + Tensorflow >= 2.0.0
-2. To train the ResNet on your own dataset, you can put the dataset under the folder **dataset**, and the directory should look like this:
+2. To train the SANet on your own dataset, you can put the dataset under the folder **dataset**, and the directory should look like this:
 ```
 |——dataset 
    |——train
