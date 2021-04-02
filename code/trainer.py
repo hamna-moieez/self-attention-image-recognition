@@ -17,7 +17,7 @@ model = san.san(sa_type=1, layers=(2, 1, 2, 4, 1), kernels=[3, 7, 7, 7, 7])
 model.build(input_shape=(config.BATCH_SIZE, config.channels, config.image_height, config.image_width))
 model.summary()
 
-train_img, train_lab, test_img, test_lab= utils.read_train_test_data("/home/local/QCRI/mjanjua/self_attention/dataset")
+train_img, train_lab, test_img, test_lab= utils.read_train_test_data("/Users/hamnamoieez/Desktop/Projects/self-attention-image-recognition/dataset")
 train_img = utils.data_preprocess(train_img)
 train_lab = utils.one_hot_encoder(train_lab)
 X_train, X_val, y_train, y_val = utils.validation_data(train_img, train_lab)
@@ -25,7 +25,7 @@ train_generator, val_generator = utils.data_augmentation(X_train, y_train, X_val
 
 # define loss and optimizer
 loss_object = tf.keras.losses.CategoricalCrossentropy()
-optimizer = tf.keras.optimizers.Adam(learning_rate=3e-4)
+optimizer = tf.keras.optimizers.Adam()
 train_loss = tf.keras.metrics.Mean(name='train_loss')
 train_accuracy = tf.keras.metrics.CategoricalAccuracy(name='train_accuracy')
 
@@ -95,4 +95,4 @@ for epoch in range(config.EPOCHS):
                                                                 valid_accuracy.result()))
     print("<"+"-"*80+">")
 
-model.save_weights(filepath=config.save_model_dir, save_format='tf')
+tf.keras.models.save_model(model, config.save_model_dir, save_format="tf")
