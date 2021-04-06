@@ -17,4 +17,5 @@ A tensorflow implementation of pair-wise and patch-wise self attention network f
 5. Run **trainer.py** to start training.
 
 ### Note
-The implementation is supported only for GPU training because of the image format specific limitation of tensorflow.
+- The code is a tensorflow implementation of SAN by https://github.com/hszhao/SAN
+- The implementation is supported only for GPU training because of the image format specific limitation of tensorflow.
